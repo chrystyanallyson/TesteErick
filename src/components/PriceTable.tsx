@@ -27,11 +27,39 @@ export const PriceTable: React.FC<PriceTableProps> = ({
     }).format(val);
   };
 
-  const handlePriceChange = (id: string, name: string, rawStr: string) => {
-    // Replace commas with dots and keep numbers
-    const sanitized = rawStr.replace(/[^\d.,-]/g, '').replace(',', '.');
-    const parsed = parseFloat(sanitized);
-    onUpdateProduct(id, name, isNaN(parsed) ? 0 : parsed);
+  // Internal component to handle price string state while typing
+  const PriceInput = ({ item }: { item: Product }) => {
+    const [val, setVal] = React.useState(item.price === 0 ? '' : item.price.toString().replace('.', ','));
+
+    React.useEffect(() => {
+      const sanitized = val.replace(/[^\d.,-]/g, '').replace(',', '.');
+      const parsedVal = parseFloat(sanitized);
+      const currentPrice = isNaN(parsedVal) ? 0 : parsedVal;
+      
+      // Only sync from parent if the parent's actual number value differs from our local string's numeric value
+      if (currentPrice !== item.price) {
+        setVal(item.price === 0 ? '' : item.price.toString().replace('.', ','));
+      }
+    }, [item.price, val]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawStr = e.target.value;
+      const sanitized = rawStr.replace(/[^\d.,-]/g, '');
+      setVal(sanitized);
+      
+      const parsed = parseFloat(sanitized.replace(',', '.'));
+      onUpdateProduct(item.id, item.name, isNaN(parsed) ? 0 : parsed);
+    };
+
+    return (
+      <input
+        type="text"
+        value={val}
+        onChange={handleChange}
+        placeholder="0,00"
+        className="w-24 sm:w-20 font-mono font-bold text-slate-900 bg-emerald-100/70 border border-emerald-400 rounded px-1.5 py-0.5 text-right sm:text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm print:border-none print:bg-transparent"
+      />
+    );
   };
 
   // Helper to render search term highlight
@@ -140,13 +168,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
                   <td className="p-1.5 border-r border-slate-900 text-right sm:text-left whitespace-nowrap font-mono font-bold text-slate-950 tracking-tight">
                     {leftItem ? (
                       isEditable ? (
-                        <input
-                          type="text"
-                          value={leftItem.price === 0 ? '' : leftItem.price.toString().replace('.', ',')}
-                          onChange={(e) => handlePriceChange(leftItem.id, leftItem.name, e.target.value)}
-                          placeholder="0,00"
-                          className="w-20 font-mono font-bold text-slate-900 bg-emerald-100/70 border border-emerald-400 rounded px-1.5 py-0.5 text-right sm:text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm print:border-none print:bg-transparent"
-                        />
+                        <PriceInput item={leftItem} />
                       ) : (
                         formatBRL(leftItem.price)
                       )
@@ -185,13 +207,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
                   <td className="p-1.5 text-right sm:text-left whitespace-nowrap font-mono font-bold text-slate-950 tracking-tight">
                     {rightItem ? (
                       isEditable ? (
-                        <input
-                          type="text"
-                          value={rightItem.price === 0 ? '' : rightItem.price.toString().replace('.', ',')}
-                          onChange={(e) => handlePriceChange(rightItem.id, rightItem.name, e.target.value)}
-                          placeholder="0,00"
-                          className="w-20 font-mono font-bold text-slate-900 bg-emerald-100/70 border border-emerald-400 rounded px-1.5 py-0.5 text-right sm:text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm print:border-none print:bg-transparent"
-                        />
+                        <PriceInput item={rightItem} />
                       ) : (
                         formatBRL(rightItem.price)
                       )
@@ -260,13 +276,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
               </td>
               <td className="p-2 text-right sm:text-left whitespace-nowrap font-mono font-bold text-slate-950 tracking-tight">
                 {isEditable ? (
-                  <input
-                    type="text"
-                    value={item.price === 0 ? '' : item.price.toString().replace('.', ',')}
-                    onChange={(e) => handlePriceChange(item.id, item.name, e.target.value)}
-                    placeholder="0,00"
-                    className="w-24 font-mono font-bold text-slate-900 bg-emerald-100/70 border border-emerald-400 rounded px-2 py-0.5 text-right sm:text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm print:border-none print:bg-transparent"
-                  />
+                  <PriceInput item={item} />
                 ) : (
                   formatBRL(item.price)
                 )}
